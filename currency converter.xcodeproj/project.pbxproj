@@ -6,6 +6,14 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		264B22712E84B21F002351BA /* Auth in Frameworks */ = {isa = PBXBuildFile; productRef = 264B22702E84B21F002351BA /* Auth */; };
+		264B22732E84B21F002351BA /* Functions in Frameworks */ = {isa = PBXBuildFile; productRef = 264B22722E84B21F002351BA /* Functions */; };
+		264B22752E84B21F002351BA /* PostgREST in Frameworks */ = {isa = PBXBuildFile; productRef = 264B22742E84B21F002351BA /* PostgREST */; };
+		264B22772E84B21F002351BA /* Realtime in Frameworks */ = {isa = PBXBuildFile; productRef = 264B22762E84B21F002351BA /* Realtime */; };
+		264B22792E84B21F002351BA /* Storage in Frameworks */ = {isa = PBXBuildFile; productRef = 264B22782E84B21F002351BA /* Storage */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		26E6C5812E8397EF00E5386B /* currency converter.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "currency converter.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -23,6 +31,11 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				264B22752E84B21F002351BA /* PostgREST in Frameworks */,
+				264B22732E84B21F002351BA /* Functions in Frameworks */,
+				264B22712E84B21F002351BA /* Auth in Frameworks */,
+				264B22792E84B21F002351BA /* Storage in Frameworks */,
+				264B22772E84B21F002351BA /* Realtime in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -65,6 +78,11 @@
 			);
 			name = "currency converter";
 			packageProductDependencies = (
+				264B22702E84B21F002351BA /* Auth */,
+				264B22722E84B21F002351BA /* Functions */,
+				264B22742E84B21F002351BA /* PostgREST */,
+				264B22762E84B21F002351BA /* Realtime */,
+				264B22782E84B21F002351BA /* Storage */,
 			);
 			productName = "currency converter";
 			productReference = 26E6C5812E8397EF00E5386B /* currency converter.app */;
@@ -94,6 +112,9 @@
 			);
 			mainGroup = 26E6C5782E8397EF00E5386B;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				264B226F2E84B21F002351BA /* XCRemoteSwiftPackageReference "supabase-swift" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 26E6C5822E8397EF00E5386B /* Products */;
 			projectDirPath = "";
@@ -332,6 +353,45 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		264B226F2E84B21F002351BA /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/supabase/supabase-swift.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.5.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		264B22702E84B21F002351BA /* Auth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 264B226F2E84B21F002351BA /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Auth;
+		};
+		264B22722E84B21F002351BA /* Functions */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 264B226F2E84B21F002351BA /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Functions;
+		};
+		264B22742E84B21F002351BA /* PostgREST */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 264B226F2E84B21F002351BA /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = PostgREST;
+		};
+		264B22762E84B21F002351BA /* Realtime */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 264B226F2E84B21F002351BA /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Realtime;
+		};
+		264B22782E84B21F002351BA /* Storage */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 264B226F2E84B21F002351BA /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Storage;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 26E6C5792E8397EF00E5386B /* Project object */;
 }
