@@ -1639,12 +1639,11 @@ struct ContentView: View {
             let timeseriesURL: (String, String, String, String) -> URL // base, target, start, end
 
             static func forProvider(_ key: String) -> ProviderEndpoints {
-                // Default: exchangerate.host for all providers until dedicated APIs are plugged in.
-                // TODO: Replace per-provider endpoints and add API keys/headers as needed.
+                // Using exchangerate-api.com - free, reliable, no API key needed
+                // Free tier: 1,500 requests/month (more than enough for personal use)
                 let latest: (String) -> URL = { base in
-                    var comps = URLComponents(string: "https://api.exchangerate.host/latest")!
-                    comps.queryItems = [URLQueryItem(name: "base", value: base)]
-                    return comps.url!
+                    // Simple, reliable API with consistent uptime
+                    return URL(string: "https://api.exchangerate-api.com/v4/latest/\(base)")!
                 }
                 let timeseries: (String, String, String, String) -> URL = { base, target, start, end in
                     var comps = URLComponents(string: "https://api.exchangerate.host/timeseries")!
