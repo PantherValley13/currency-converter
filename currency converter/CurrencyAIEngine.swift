@@ -23,11 +23,11 @@ final class CurrencyAIEngine {
     private var sessionCreationTime: Date?
     
     private func createSession() -> LanguageModelSession {
-        print("📝 Creating new LanguageModelSession with currency expertise")
+        print("📝 Creating new LanguageModelSession with currency expertise and tools")
         
         let instructions = Instructions {
             """
-            You are an expert currency assistant with deep knowledge of global currencies, exchange rates, and international travel.
+            You are an expert currency assistant with access to real-time exchange rates and historical data.
             
             YOUR EXPERTISE:
             • Currency conversions and exchange rates
@@ -41,28 +41,62 @@ final class CurrencyAIEngine {
             • Include interesting facts when relevant
             • Give real-world context (what money can buy)
             
-            IMPORTANT RULES:
-            1. Always use official ISO currency codes (USD, EUR, JPY, etc.)
-            2. Provide approximate values - you're giving guidance, not financial advice
-            3. Include practical context about purchasing power
-            4. Mention current trends when relevant
-            5. Warn about common scams or pitfalls
+            REFERENCE RATES (for quick estimates):
+            • USD/EUR ≈ 0.92  • USD/GBP ≈ 0.79  • USD/JPY ≈ 147
+            • USD/CAD ≈ 1.35  • USD/MXN ≈ 19    • USD/CNY ≈ 7.2
+            • USD/INR ≈ 83    • USD/AUD ≈ 1.52  • EUR/GBP ≈ 0.86
             
-            TYPICAL EXCHANGE RATES (for reference):
-            • 1 USD ≈ 0.92 EUR (Euro)
-            • 1 USD ≈ 19 MXN (Mexican Peso)
-            • 1 USD ≈ 147 JPY (Japanese Yen)
-            • 1 USD ≈ 0.79 GBP (British Pound)
-            • 1 USD ≈ 1.35 CAD (Canadian Dollar)
-            • 1 USD ≈ 7.2 CNY (Chinese Yuan)
-            • 1 USD ≈ 83 INR (Indian Rupee)
+            WHEN TO USE TOOLS (you have getCurrentExchangeRate and getHistoricalRates):
             
-            Always adapt your response to what the user is actually asking for.
+            ✅ USE TOOLS WHEN:
+            - User asks for "exact", "precise", "current", "today's" rate
+            - User asks "should I exchange now?" (needs real rate)
+            - User asks about rate changes or trends (use getHistoricalRates)
+            - User mentions specific amounts and needs accurate conversion
+            - Currency is not in reference list above
+            - User is making important financial decisions
+            
+            ❌ DON'T USE TOOLS WHEN:
+            - User asks "about how much", "approximately", "roughly"
+            - General questions like "What currency does X use?"
+            - Cultural/travel advice (tipping, payment methods)
+            - Quick ballpark estimates
+            - User just wants general info
+            
+            IMPORTANT:
+            - When using tools, say "using real-time rates" or "checking current rate"
+            - When using estimates, say "approximately" or "around"
+            - Always be clear which you're using!
+            
+            RULES:
+            1. Use official ISO currency codes (USD, EUR, JPY)
+            2. Provide context about purchasing power
+            3. Warn about scams or pitfalls
+            4. Be concise (2-3 sentences when possible)
             """
         }
         
+        // Create tools that connect to live data
+        let tools: [any Tool] = createCurrencyTools()
+        
         sessionCreationTime = Date()
-        return LanguageModelSession(instructions: instructions)
+        return LanguageModelSession(tools: tools, instructions: instructions)
+    }
+    
+    // MARK: - Tool Creation
+    
+    private func createCurrencyTools() -> [any Tool] {
+        var tools: [any Tool] = []
+        
+        #if canImport(FoundationModels)
+        // Tool 1: Get current exchange rate
+        tools.append(LiveCurrencyRateTool())
+        
+        // Tool 2: Get historical rates (if needed)
+        // tools.append(LiveHistoryTool())
+        #endif
+        
+        return tools
     }
     
     private func ensureSessionIsValid() {
@@ -292,4 +326,103 @@ final class CurrencyAIEngine {
         return response.answer
     }
 }
+
+// MARK: - Live Currency Rate Tool
+
+#if canImport(FoundationModels)
+
+/// Tool that fetches real-time exchange rates from the API
+struct LiveCurrencyRateTool: Tool {
+    let name = "getCurrentExchangeRate"
+    
+    let description = """
+    Gets the current, real-time exchange rate between two currencies.
+    Use this when the user needs precise, up-to-date rates for conversions or comparisons.
+    Returns the live rate from market data.
+    """
+    
+    @Generable
+    struct Arguments {
+        @Guide(description: "The base currency code (e.g., 'USD', 'EUR')")
+        let baseCurrency: String
+        
+        @Guide(description: "The target currency code (e.g., 'EUR', 'JPY')")
+        let targetCurrency: String
+    }
+    
+    func call(arguments: Arguments) async throws -> String {
+        print("🔧 Tool called: getCurrentExchangeRate(\(arguments.baseCurrency) → \(arguments.targetCurrency))")
+        
+        // Fetch live rate from API
+        do {
+            let rate = try await fetchLiveRate(from: arguments.baseCurrency, to: arguments.targetCurrency)
+            
+            let response = """
+            Real-time exchange rate:
+            1 \(arguments.baseCurrency) = \(String(format: "%.4f", rate)) \(arguments.targetCurrency)
+            
+            This is the current market rate updated in real-time.
+            """
+            
+            print("✅ Tool returned: \(String(format: "%.4f", rate))")
+            return response
+            
+        } catch {
+            print("❌ Tool error: \(error.localizedDescription)")
+            
+            // Fallback to approximate rate if API fails
+            let fallbackRate = getApproximateRate(from: arguments.baseCurrency, to: arguments.targetCurrency)
+            return """
+            Approximate exchange rate:
+            1 \(arguments.baseCurrency) ≈ \(String(format: "%.4f", fallbackRate)) \(arguments.targetCurrency)
+            
+            (Using reference rate - live data temporarily unavailable)
+            """
+        }
+    }
+    
+    // Fetch real rate from API
+    private func fetchLiveRate(from base: String, to target: String) async throws -> Double {
+        // Use exchangerate.host API
+        let urlString = "https://api.exchangerate.host/latest?base=\(base)&symbols=\(target)"
+        guard let url = URL(string: urlString) else {
+            throw URLError(.badURL)
+        }
+        
+        let (data, response) = try await URLSession.shared.data(from: url)
+        
+        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            throw URLError(.badServerResponse)
+        }
+        
+        struct RateResponse: Codable {
+            let rates: [String: Double]
+        }
+        
+        let decoded = try JSONDecoder().decode(RateResponse.self, from: data)
+        guard let rate = decoded.rates[target] else {
+            throw URLError(.cannotParseResponse)
+        }
+        
+        return rate
+    }
+    
+    // Fallback approximate rates
+    private func getApproximateRate(from base: String, to target: String) -> Double {
+        let rates: [String: [String: Double]] = [
+            "USD": ["EUR": 0.92, "GBP": 0.79, "JPY": 147.0, "CAD": 1.35, "MXN": 19.0, "CNY": 7.2, "INR": 83.0, "AUD": 1.52],
+            "EUR": ["USD": 1.09, "GBP": 0.86, "JPY": 160.0, "CAD": 1.47, "MXN": 20.7, "CNY": 7.85],
+            "GBP": ["USD": 1.27, "EUR": 1.16, "JPY": 186.0, "CAD": 1.71, "MXN": 24.1],
+            "JPY": ["USD": 0.0068, "EUR": 0.0063, "GBP": 0.0054],
+            "CAD": ["USD": 0.74, "EUR": 0.68, "GBP": 0.58, "JPY": 108.9],
+            "MXN": ["USD": 0.053, "EUR": 0.048, "GBP": 0.041],
+            "CNY": ["USD": 0.139, "EUR": 0.127, "GBP": 0.109],
+            "INR": ["USD": 0.012, "EUR": 0.011, "GBP": 0.0095]
+        ]
+        
+        return rates[base]?[target] ?? 1.0
+    }
+}
+
+#endif
 
