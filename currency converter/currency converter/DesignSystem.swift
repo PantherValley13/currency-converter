@@ -170,7 +170,7 @@ struct AnimatedNumber: View {
             .onAppear {
                 displayValue = value
             }
-            .onChange(of: value) { newValue in
+            .onChange(of: value) { oldValue, newValue in
                 withAnimation(AnimationCurve.smooth) {
                     displayValue = newValue
                 }
@@ -192,7 +192,7 @@ struct SkeletonView: View {
 
 // MARK: - Empty State
 
-struct EmptyStateView: View {
+struct DSEmptyStateView: View {
     let icon: String
     let title: String
     let message: String
@@ -296,8 +296,8 @@ struct PrimaryButtonStyle: ButtonStyle {
             )
             .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
             .animation(AnimationCurve.quick, value: configuration.isPressed)
-            .onChange(of: configuration.isPressed) { pressed in
-                if pressed {
+            .onChange(of: configuration.isPressed) { oldValue, newValue in
+                if newValue {
                     Haptics.impact(.light)
                 }
             }
@@ -317,8 +317,8 @@ struct SecondaryButtonStyle: ButtonStyle {
             )
             .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
             .animation(AnimationCurve.quick, value: configuration.isPressed)
-            .onChange(of: configuration.isPressed) { pressed in
-                if pressed {
+            .onChange(of: configuration.isPressed) { oldValue, newValue in
+                if newValue {
                     Haptics.impact(.light)
                 }
             }
